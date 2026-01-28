@@ -1,0 +1,43 @@
+# Verilator build output
+obj_dir/
+
+# Waveform dumps
+*.vcd
+*.fst
+*.fst.hier
+
+# Debug/log files
+debug_log.txt
+*.log
+
+# Test firmware (generated)
+firmware.hex
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.bak
+*.orig
+
+# Synth/PnR outputs (if any)
+*.bit
+*.bin
+*.mcs
+*.prm
+
+# Vivado (if used)
+*.jou
+*.str
+.Xil/
+*.runs/
+*.cache/
+*.hw/
+*.ip_user_files/

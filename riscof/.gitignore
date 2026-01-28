@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+.pytest_cache/
+
+# RISCOF work directory
+riscof_work/
+
+# Test outputs
+*.signature
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*~
