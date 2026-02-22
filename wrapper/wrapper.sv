@@ -70,6 +70,7 @@ module wrapper #(
     output logic       LED2,
     output logic       LED3,
     output logic       LED4,
+    output logic       LED5,
     output logic       LED6,
     output logic       LED7,
     output logic       LED8,
