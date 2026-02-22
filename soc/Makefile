@@ -9,7 +9,7 @@ VERILATOR_FLAGS = --cc --exe --build -j 0 --trace -I. -I../core -I../uart -I../c
 CXX_FLAGS = -std=c++14 -Wall -fcoroutines
 
 # Files
-SV_SRCS = ../core/core_defs.sv soc_harness.sv soc.sv ../core/core_fsm.sv ../core/core_alu.sv ../core/core_lsu.sv ../core/core_regs.sv ../uart/uart.sv ../cache/cache.sv ../cache/axi_ram.v ../spi/spi.sv ../xip/xip.sv sim_flash.v
+SV_SRCS = ../core/core_defs.sv soc_harness.sv soc.sv ../core/core_fsm.sv ../core/core_alu.sv ../core/core_lsu.sv ../core/core_regs.sv ../uart/uart.sv ../cache/cache.sv ../cache/axi_ram.v ../spi/spi.sv ../xip/xip.sv ../mmu/mmu.sv ../clint/clint.sv ../plic/plic.sv sim_flash.v
 CPP_SRCS = soc_tb.cpp
 
 # Targets

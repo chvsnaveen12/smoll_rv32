@@ -18,7 +18,8 @@ double sc_time_stamp() {
 // Latency settings
 int REQ_READY_LATENCY = 0;
 int RESP_VALID_LATENCY = 1;
-int MAX_CYCLES = 500000; // Increased for booting
+u_int64_t MAX_CYCLES = 40000000; // Increased for booting
+u_int64_t START_CYCLE = 35000000; // Increased for booting
 
 void load_binary(std::map<uint32_t, uint32_t>& memory, const std::string& filename, uint32_t base_addr) {
     std::ifstream file(filename, std::ios::binary | std::ios::ate);
@@ -49,13 +50,14 @@ int main(int argc, char** argv) {
     Verilated::commandArgs(argc, argv);
     Verilated::traceEverOn(true);
 
-    if (argc < 3) {
-        std::cerr << "Usage: " << argv[0] << " OPENSBI_BIN DTB_FILE" << std::endl;
+    if (argc < 4) {
+        std::cerr << "Usage: " << argv[0] << " OPENSBI_BIN LINUX_IMG DTB_FILE" << std::endl;
         return 1;
     }
 
     std::string sbi_file = argv[1];
-    std::string dtb_file = argv[2];
+    std::string lnx_file = argv[2];
+    std::string dtb_file = argv[3];
 
     Vcore_fsm* top = new Vcore_fsm;
     VerilatedVcdC* tfp = new VerilatedVcdC;
@@ -68,6 +70,7 @@ int main(int argc, char** argv) {
     
     // Load Binaries
     load_binary(memory, sbi_file, 0x80000000);
+    load_binary(memory, lnx_file, 0x80400000);
     load_binary(memory, dtb_file, 0x86000000);
 
     // Bootrom at 0x40000000
@@ -119,7 +122,7 @@ int main(int argc, char** argv) {
     uint32_t last_req_addr = 0;
     uint32_t last_req_wstrb = 0;
     uint32_t last_req_wdata = 0;
-    int cycles = 0;
+    u_int64_t cycles = 0;
 
     int ready_cnt = REQ_READY_LATENCY;
     int valid_cnt = 0;
@@ -198,8 +201,7 @@ int main(int argc, char** argv) {
                 top->resp_valid_i = 0;
             }
         }
-
-        tfp->dump(main_time++);
+        if(cycles > START_CYCLE) tfp->dump(main_time++);
         if (top->clk_i) cycles++;
     }
 

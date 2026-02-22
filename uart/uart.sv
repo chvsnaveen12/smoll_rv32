@@ -49,7 +49,7 @@ module uart(
             rx_cnt <= 0;
             rx_bit_cnt <= 0;
             rx_data <= 0;
-            div <= 32'd650;
+            div <= 32'd651;
             uart_rx_irq_o <= 0;
         end
         else begin
@@ -69,12 +69,10 @@ module uart(
                 if(rx_cnt == 0) begin
                     rx_cnt <= div;
                     rx_bit_cnt <= rx_bit_cnt + 1;
-                    rx_data <= rx_data << 1;
-                    // rx_data[0] <= rx_synced;
-                    rx_data[0] <= rx_i;
+                    rx_data <= {rx_i, rx_data[9:1]};
                     if(rx_bit_cnt == 9) begin
                         uart_rx_irq_o <= 1;
-                        rx_latch <= rx_data[7:0];
+                        rx_latch <= rx_data[9:2];
                         rx_busy <= 0;
                     end
                 end

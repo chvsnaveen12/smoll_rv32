@@ -37,14 +37,21 @@ module core_csrs import core_defs::*;#()(
     output  logic           mxr_o,
     output  logic           sum_o,
     output  logic           mprv_o,
-    output  priv_e          priv_o,
+    output  logic [1:0]     priv_o,
+    output  logic [1:0]     mpp_o,
 
     // Trap PC
     output  logic [31:0]    updated_pc_o
 );
     // Current privilege level
     priv_e priv_q, priv_d;
+    
     assign priv_o = priv_q;
+    assign satp_o = satp_q;
+    assign mprv_o = xstatus_q[17];
+    assign mxr_o = xstatus_q[19];
+    assign sum_o = xstatus_q[18];
+    assign mpp_o = xstatus_q[`CSR_MSTATUS_MPP_BIT+:2];
 
     // CSR validity checks
     logic csr_priv_valid, csr_read_valid;
@@ -177,6 +184,7 @@ module core_csrs import core_defs::*;#()(
             xstatus_d[`CSR_MSTATUS_MPP_BIT+:2]  = 2'(priv_q);
             xstatus_d[`CSR_MSTATUS_MIE_BIT]     = 1'b0;
             xstatus_d[`CSR_MSTATUS_MPIE_BIT]    = xstatus_q[`CSR_MSTATUS_MIE_BIT];
+            xstatus_d[`CSR_MSTATUS_MPRV_BIT]    = 1'b0;
             priv_d                              = PRIV_MACHINE;
 
             updated_pc_o                        = mtvec_q;
@@ -189,6 +197,7 @@ module core_csrs import core_defs::*;#()(
             xstatus_d[`CSR_MSTATUS_SPP_BIT]     = priv_q[0];
             xstatus_d[`CSR_MSTATUS_SIE_BIT]     = 1'b0;
             xstatus_d[`CSR_MSTATUS_SPIE_BIT]    = xstatus_q[`CSR_MSTATUS_SIE_BIT];
+            xstatus_d[`CSR_MSTATUS_MPRV_BIT]    = 1'b0;
             priv_d                              = PRIV_SUPERVISOR;
 
             updated_pc_o                        = stvec_q;

@@ -13,7 +13,7 @@ module core_fsm import core_defs::*;#()(
     output  logic           req_mxr_o,
     output  logic           req_sum_o,
     output  logic           req_mprv_o,
-    output  logic           req_mpp_o,
+    output  logic [1:0]     req_mpp_o,
     output  logic [1:0]     req_priv_o,
     input   logic           req_ready_i,
 
@@ -21,6 +21,10 @@ module core_fsm import core_defs::*;#()(
     input   logic [31:0]    resp_value_i,
     input   logic           resp_ex_valid_i,
     input   logic [31:0]    resp_ex_code_i,
+
+    output  logic           fence_o,
+    
+    output  logic [31:0]    pc_o,
 
     // Pending interrupts
     input   logic           m_ext_irq_i,
@@ -45,6 +49,7 @@ module core_fsm import core_defs::*;#()(
     state_e state_q /*verilator public*/ = STATE_FETCH, next_state /*verilator public*/;
     // =========================================================
 
+    assign pc_o = pc_q;
 
     // Registers used in between stages ========================
     
@@ -140,11 +145,11 @@ module core_fsm import core_defs::*;#()(
     logic           csrs_int_bool;
     logic           csrs_int_take;
 
-    logic [31:0]    csrs_satp;
-    logic           csrs_mxr;
-    logic           csrs_sum;
-    logic           csrs_mprv;
-    priv_e          csrs_priv;
+    // logic [31:0]    csrs_satp;
+    // logic           csrs_mxr;
+    // logic           csrs_sum;
+    // logic           csrs_mprv;
+    logic [1:0]     csrs_priv;
 
     logic [31:0]    csrs_updated_pc;
 
@@ -215,6 +220,7 @@ module core_fsm import core_defs::*;#()(
         .sum_o(req_sum_o),
         .mprv_o(req_mprv_o),
         .priv_o(csrs_priv),
+        .mpp_o(req_mpp_o),
 
         .updated_pc_o(csrs_updated_pc)
     );
@@ -273,7 +279,7 @@ module core_fsm import core_defs::*;#()(
 
 
     // State
-    logic [31:0] pc_q = 0, npc;
+    logic [31:0] pc_q /*verilator public*/ = 0, npc;
 
     // always_ff @(posedge clk_i) begin
         // if (!rst_ni) begin
@@ -299,6 +305,8 @@ module core_fsm import core_defs::*;#()(
                 end else begin
                     global_debug_cycle_q    <= 0;
                 end
+                global_ex_code_q    <= 32'h0;
+                global_ex_tval_q    <= pc_q;
             end
             STATE_FETCH_WAIT: begin
                 fe_instr_q          <= resp_value_i;
@@ -328,6 +336,7 @@ module core_fsm import core_defs::*;#()(
                 de_csr_wen_q        <= |decoder_csr_uimm;
 
                 global_ex_code_q    <= 32'h2;                 // Illegal instruction
+                global_ex_tval_q    <= fe_instr_q;
                 
                 // $display("DEC: PC=%h, RS1=%d Val=%h, RS2=%d Val=%h", fe_pc_q, decoder_rs1_sel, regs_rs1, decoder_rs2_sel, regs_rs2);
             end
@@ -363,10 +372,14 @@ module core_fsm import core_defs::*;#()(
                 case(sys_op_e'(ex_funct3_q))
                     SYS_PRIV: begin
                         case(ex_priv_op_e)
-                            PRIVOP_EBREAK:
+                            PRIVOP_EBREAK: begin
                                 global_ex_code_q    <= 32'h3;
-                            PRIVOP_ECALL:
+                                global_ex_tval_q    <= fe_instr_q;
+                            end
+                            PRIVOP_ECALL: begin
                                 global_ex_code_q    <= csrs_priv == PRIV_MACHINE ? 32'hb : (csrs_priv == PRIV_SUPERVISOR ? 32'h9 : 32'h8);
+                                global_ex_tval_q    <= fe_instr_q;
+                            end
                             PRIVOP_MRET, PRIVOP_SRET:
                                 pc_q                <= csrs_updated_pc;
                             default: begin
@@ -376,6 +389,8 @@ module core_fsm import core_defs::*;#()(
                     SYS_CSRRW, SYS_CSRRWI, SYS_CSRRS, SYS_CSRRSI, SYS_CSRRC, SYS_CSRRCI: begin
                         if(ex_csr_rvalid_q)
                             pc_q <= npc;
+                        global_ex_code_q    <= 32'h2;                 // Illegal instruction
+                        global_ex_tval_q    <= fe_instr_q;
                     end
                     default: begin
                     end
@@ -438,11 +453,13 @@ module core_fsm import core_defs::*;#()(
                 end
             endcase
         end
-        else if(state_q == STATE_SYSTEM && (sys_op_e'(ex_funct3_q[1:0]) != SYS_PRIV)) begin
+        else if(state_q == STATE_SYSTEM && (sys_op_e'(ex_funct3_q[1:0]) != SYS_PRIV) && ex_csr_rvalid_q) begin
             regs_waddr = ex_rd_sel_q;
             regs_wdata = ex_csr_rdata_q;
 
-            csrs_waddr = ex_csr_wen_q ? ex_csr_addr_q : 0;
+            if(sys_op_e'(ex_funct3_q[1:0]) == SYS_CSRRW ||  sys_op_e'(ex_funct3_q[1:0]) == SYS_CSRRWI || ex_csr_wen_q) begin
+                csrs_waddr = ex_csr_addr_q;
+            end
             csrs_wdata = ex_csr_wdata_q;
         end
         
@@ -473,6 +490,7 @@ module core_fsm import core_defs::*;#()(
         csrs_sret = 0;
         global_ex_valid = 0;
         next_state = STATE_SYSTEM;
+        fence_o = 0;
         case(state_q)
             STATE_FETCH: begin
                 global_ex_valid = |pc_q[1:0];
@@ -533,8 +551,10 @@ module core_fsm import core_defs::*;#()(
                     end
                 endcase
             end
-            STATE_FENCE:
+            STATE_FENCE: begin
+                fence_o = 1;
                 next_state = STATE_FETCH;
+            end
             STATE_INT: begin
                 next_state = STATE_FETCH;
                 csrs_int_take = 1;
@@ -563,7 +583,7 @@ module core_fsm import core_defs::*;#()(
         // req_mxr_o       = csrs_mxr;
         // req_sum_o       = csrs_sum;
         // req_mprv_o      = csrs_mprv;
-        // req_priv_o      = csrs_priv;
+        req_priv_o      = csrs_priv;
 
         case(state_q)
             STATE_FETCH: begin

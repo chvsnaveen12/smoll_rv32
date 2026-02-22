@@ -1,5 +1,5 @@
 module clint #(
-    parameter MTIME_DIV = 4
+    parameter MTIME_DIV = 1000
 )(
     input logic clk_i,
     input logic rst_ni,
@@ -19,7 +19,7 @@ module clint #(
     output logic        mti_o
 );
 
-    logic [4:0] mtime_div;
+    logic [15:0] mtime_div;
     logic [63:0] mtime;
     logic [63:0] mtimecmp;
     logic [31:0] msip;
@@ -29,28 +29,39 @@ module clint #(
 
     assign req_ready_o = 1'b1;
 
-    always_ff @(posedge clk_i) begin
-        if(!rst_ni) begin
-            mtime <= 0;
-            mtimecmp <= 64'hffffffffffffffff;
-            msip <= 0;
-            mtime_div <= 0;
-        end else begin
-            mtime_div <= mtime_div + 1;
-            if(mtime_div == MTIME_DIV) begin
-                mtime <= mtime + 1;
-                mtime_div <= 0;
-            end
-        end
-    end
+    // always_ff @(posedge clk_i) begin
+    //     if(!rst_ni) begin
+    //         mtime <= 0;
+    //         mtimecmp <= 64'hffffffffffffffff;
+    //         msip <= 0;
+    //         mtime_div <= 0;
+    //     end else begin
+    //         mtime_div <= mtime_div + 1;
+    //         if(mtime_div == MTIME_DIV) begin
+    //             mtime <= mtime + 1;
+    //             mtime_div <= 0;
+    //         end
+    //     end
+    // end
 
     always_ff @(posedge clk_i) begin
         if(!rst_ni) begin
             resp_valid_o <= 1'b0;
             resp_value_o <= 32'b0;
+
+            mtime <= 0;
+            mtimecmp <= 64'hffffffffffffffff;
+            msip <= 0;
+            mtime_div <= 0;
         end else begin
             resp_valid_o <= 1'b0;
             resp_value_o <= 32'h0;
+
+            mtime_div <= mtime_div + 1;
+            if(mtime_div == MTIME_DIV) begin
+                mtime <= mtime + 1;
+                mtime_div <= 0;
+            end
 
             if(req_valid_i) begin
                 if(~|req_wstrb_i) begin

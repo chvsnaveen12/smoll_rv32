@@ -17,6 +17,9 @@ module soc #()(
     output  logic   spi_sd_sck_o,
     output  logic   spi_sd_mosi_o,
     input   logic   spi_sd_miso_i,
+    
+    output  logic [31:0] pc_o,
+    output  logic [2:0]  state_o,
 
     // Cache AXI Interface (optional - for external memory)
     output  logic [3:0]     m_axi_awid,
@@ -71,12 +74,6 @@ module soc #()(
     // Collect IRQs from peripherals
     logic uart_rx_irq;
 
-    // Simple IRQ aggregation
-    assign m_ext_irq   = uart_rx_irq;
-    assign m_timer_irq = 1'b0;  // No timer yet
-    assign m_soft_irq  = 1'b0;
-    assign s_ext_irq   = 1'b0;
-
     // ---------------------------------------------------------
     // Core Signals
     // ---------------------------------------------------------
@@ -90,6 +87,7 @@ module soc #()(
     logic           core_req_sum;
     logic           core_req_mprv;
     logic [1:0]     core_req_priv;
+    logic [1:0]     core_req_mpp;
     logic           core_req_ready;
     
     logic           core_resp_valid;
@@ -97,32 +95,48 @@ module soc #()(
     logic           core_resp_ex_valid;
     logic [31:0]    core_resp_ex_code;
 
+    logic           core_fence;
+
+    logic           mmu_req_valid;
+    logic [31:0]    mmu_req_addr;
+    logic [31:0]    mmu_req_value;
+    logic [3:0]     mmu_req_wstrb;
+    logic           mmu_req_ready;
+
+    logic           mmu_resp_valid;
+    logic [31:0]    mmu_resp_value;
     // Unused MMU signals - directly pass through
-    assign core_resp_ex_valid = 1'b0;
-    assign core_resp_ex_code  = 32'b0;
+    // assign core_resp_ex_valid = 1'b0;
+    // assign core_resp_ex_code  = 32'b0;
 
     // ---------------------------------------------------------
     // Peripheral Bus Signals
     // ---------------------------------------------------------
-    // UART (0x1000_0000)
     logic           uart_req_valid;
     logic           uart_req_ready;
     logic           uart_resp_valid;
     logic [31:0]    uart_resp_value;
 
-    // Cache (0x8000_0000)
     logic           cache_req_valid;
     logic           cache_req_ready;
     logic           cache_resp_valid;
     logic [31:0]    cache_resp_value;
 
-    // XIP Flash Controller (0x9000_0000)
     logic           xip_req_valid;
     logic           xip_req_ready;
     logic           xip_resp_valid;
     logic [31:0]    xip_resp_value;
 
-    // SPI SD (0x9000_0000)
+    logic           plic_req_valid;
+    logic           plic_req_ready;
+    logic           plic_resp_valid;
+    logic [31:0]    plic_resp_value;
+
+    logic           clint_req_valid;
+    logic           clint_req_ready;
+    logic           clint_resp_valid;
+    logic [31:0]    clint_resp_value;
+
     logic           spi_req_valid;
     logic           spi_req_ready;
     logic           spi_resp_valid;
@@ -138,15 +152,17 @@ module soc #()(
     // Memory Map (Using upper 4 bits for address decoding)
     // ---------------------------------------------------------
     localparam BASE_UART  = 4'h1;   // 0x1000_0000
-    localparam BASE_SPI   = 4'h2;   // 0x2000_0000
+    localparam BASE_CLINT = 4'h2;   // 0x2000_0000
+    localparam BASE_PLIC  = 4'h3;   // 0x3000_0000
     localparam BASE_XIP   = 4'h4;   // 0x4000_0000
+    localparam BASE_SPI   = 4'h5;   // 0x5000_0000
     localparam BASE_CACHE = 4'h8;   // 0x8000_0000
 
     // Address Decoding
     logic [3:0] req_prefix;
     logic [31:0] trunc_address;
-    assign req_prefix = core_req_addr[31:28];
-    assign trunc_address = {4'b0000, core_req_addr[27:0]};
+    assign req_prefix = mmu_req_addr[31:28];
+    assign trunc_address = {4'b0000, mmu_req_addr[27:0]};
 
     // ---------------------------------------------------------
     // Request Arbiter / Address Decoder
@@ -157,31 +173,41 @@ module soc #()(
         cache_req_valid  = 1'b0;
         xip_req_valid    = 1'b0;
         spi_req_valid    = 1'b0;
+        clint_req_valid  = 1'b0;
+        plic_req_valid   = 1'b0;
         dummy_req_valid  = 1'b0;
-        core_req_ready   = 1'b0;
+        mmu_req_ready   = 1'b0;
 
-        if (core_req_valid) begin
+        if (mmu_req_valid) begin
             case (req_prefix)
                 BASE_UART: begin
                     uart_req_valid   = 1'b1;
-                    core_req_ready   = uart_req_ready;
+                    mmu_req_ready   = uart_req_ready;
                 end
                 BASE_CACHE: begin
                     cache_req_valid  = 1'b1;
-                    core_req_ready   = cache_req_ready;
+                    mmu_req_ready   = cache_req_ready;
+                end
+                BASE_PLIC: begin
+                    plic_req_valid  = 1'b1;
+                    mmu_req_ready   = plic_req_ready;
+                end
+                BASE_CLINT: begin
+                    clint_req_valid  = 1'b1;
+                    mmu_req_ready   = clint_req_ready;
                 end
                 BASE_XIP: begin
                     xip_req_valid    = 1'b1;
-                    core_req_ready   = xip_req_ready;
+                    mmu_req_ready   = xip_req_ready;
                 end
                 BASE_SPI: begin
                     spi_req_valid    = 1'b1;
-                    core_req_ready   = spi_req_ready;
+                    mmu_req_ready   = spi_req_ready;
                 end 
                 default: begin
                     // Dummy catches all unmatched addresses
                     dummy_req_valid  = 1'b1;
-                    core_req_ready   = dummy_req_ready;
+                    mmu_req_ready   = dummy_req_ready;
                 end
             endcase
         end
@@ -191,25 +217,31 @@ module soc #()(
     // Response Mux
     // ---------------------------------------------------------
     always_comb begin
-        core_resp_valid = 1'b0;
-        core_resp_value = 32'b0;
+        mmu_resp_valid = 1'b0;
+        mmu_resp_value = 32'b0;
 
         // Priority encoded mux (only one should be valid at a time)
         if (uart_resp_valid) begin
-            core_resp_valid = 1'b1;
-            core_resp_value = uart_resp_value;
+            mmu_resp_valid = 1'b1;
+            mmu_resp_value = uart_resp_value;
         end else if (cache_resp_valid) begin
-            core_resp_valid = 1'b1;
-            core_resp_value = cache_resp_value;
+            mmu_resp_valid = 1'b1;
+            mmu_resp_value = cache_resp_value;
         end else if (xip_resp_valid) begin
-            core_resp_valid = 1'b1;
-            core_resp_value = xip_resp_value;
+            mmu_resp_valid = 1'b1;
+            mmu_resp_value = xip_resp_value;
         end else if (spi_resp_valid) begin
-            core_resp_valid = 1'b1;
-            core_resp_value = spi_resp_value;
+            mmu_resp_valid = 1'b1;
+            mmu_resp_value = spi_resp_value;
+        end else if (plic_resp_valid) begin
+            mmu_resp_valid = 1'b1;
+            mmu_resp_value = plic_resp_value;
+         end else if (clint_resp_valid) begin
+             mmu_resp_valid = 1'b1;
+             mmu_resp_value = clint_resp_value;
         end else if (dummy_resp_valid) begin
-            core_resp_valid = 1'b1;
-            core_resp_value = dummy_resp_value;
+            mmu_resp_valid = 1'b1;
+            mmu_resp_value = dummy_resp_value;
         end
     end
 
@@ -249,12 +281,16 @@ module soc #()(
         .req_is_fetch_o (core_req_is_fetch),
         .req_wstrb_o    (core_req_wstrb),
         .req_satp_o     (core_req_satp),
+        .req_mpp_o      (core_req_mpp),
         .req_mxr_o      (core_req_mxr),
         .req_sum_o      (core_req_sum),
         .req_mprv_o     (core_req_mprv),
         .req_priv_o     (core_req_priv),
         .req_ready_i    (core_req_ready),
         
+        .fence_o        (core_fence),
+        .pc_o(pc_o),
+
         .resp_valid_i   (core_resp_valid),
         .resp_value_i   (core_resp_value),
         .resp_ex_valid_i(core_resp_ex_valid),
@@ -264,6 +300,48 @@ module soc #()(
         .m_timer_irq_i  (m_timer_irq),
         .m_soft_irq_i   (m_soft_irq),
         .s_ext_irq_i    (s_ext_irq)
+        
+//        .m_ext_irq_i    (1'b0),
+//        .m_timer_irq_i  (1'b0),
+//        .m_soft_irq_i   (1'b0),
+//        .s_ext_irq_i    (1'b0)        
+    );
+
+    mmu mmu_inst(
+        .clk_i          (clk_i),
+        .rst_ni         (rst_ni),
+
+        .req_valid_i    (core_req_valid),
+        .req_addr_i     (core_req_addr),
+        .req_value_i    (core_req_value),
+        .req_is_fetch_i (core_req_is_fetch),
+        .req_wstrb_i    (core_req_wstrb),
+        .req_satp_i     (core_req_satp),
+        .req_mxr_i      (core_req_mxr),
+        .req_mpp_i      (core_req_mpp),
+        .req_sum_i      (core_req_sum),
+        .req_mprv_i     (core_req_mprv),
+        .req_priv_i     (core_req_priv),
+        .req_ready_o    (core_req_ready),
+
+        .state_o(state_o),
+        
+        .resp_valid_o   (core_resp_valid),
+        .resp_value_o   (core_resp_value),
+        .resp_ex_valid_o(core_resp_ex_valid),
+        .resp_ex_code_o (core_resp_ex_code),
+
+        .fence_i        (core_fence),
+
+        .req_valid_o    (mmu_req_valid),
+        .req_addr_o     (mmu_req_addr),
+        .req_value_o    (mmu_req_value),
+        .req_wstrb_o    (mmu_req_wstrb),
+
+        .req_ready_i    (mmu_req_ready),
+
+        .resp_valid_i   (mmu_resp_valid),
+        .resp_value_i   (mmu_resp_value)
     );
 
     // ---------------------------------------------------------
@@ -275,8 +353,8 @@ module soc #()(
 
         .req_valid_i    (uart_req_valid),
         .req_addr_i     (trunc_address),
-        .req_value_i    (core_req_value),
-        .req_wstrb_i    (core_req_wstrb),
+        .req_value_i    (mmu_req_value),
+        .req_wstrb_i    (mmu_req_wstrb),
         
         .req_ready_o    (uart_req_ready),
         .resp_valid_o   (uart_resp_valid),
@@ -285,6 +363,41 @@ module soc #()(
         .tx_o           (uart_tx_o),
         .rx_i           (uart_rx_i),
         .uart_rx_irq_o  (uart_rx_irq)
+    );
+
+    clint clint_inst (
+        .clk_i          (clk_i),
+        .rst_ni         (rst_ni),
+
+        .req_valid_i    (clint_req_valid),
+        .req_addr_i     (trunc_address),
+        .req_value_i    (mmu_req_value),
+        .req_wstrb_i    (mmu_req_wstrb),
+        
+        .req_ready_o    (clint_req_ready),
+        .resp_valid_o   (clint_resp_valid),
+        .resp_value_o   (clint_resp_value),
+
+        .msi_o(m_soft_irq),
+        .mti_o(m_timer_irq)
+    );
+
+    plic plic_inst (
+        .clk_i          (clk_i),
+        .rst_ni         (rst_ni),
+
+        .req_valid_i    (plic_req_valid),
+        .req_addr_i     (trunc_address),
+        .req_value_i    (mmu_req_value),
+        .req_wstrb_i    (mmu_req_wstrb),
+        
+        .req_ready_o    (plic_req_ready),
+        .resp_valid_o   (plic_resp_valid),
+        .resp_value_o   (plic_resp_value),
+
+        .irqs_i({27'b0, uart_rx_irq, 4'b0}),
+        .mei_o(m_ext_irq),
+        .sei_o(s_ext_irq)
     );
 
     // ---------------------------------------------------------
@@ -300,8 +413,8 @@ module soc #()(
 
         .req_valid_i    (cache_req_valid),
         .req_addr_i     (trunc_address),
-        .req_value_i    (core_req_value),
-        .req_wstrb_i    (core_req_wstrb),
+        .req_value_i    (mmu_req_value),
+        .req_wstrb_i    (mmu_req_wstrb),
         
         .req_ready_o    (cache_req_ready),
         .resp_valid_o   (cache_resp_valid),
@@ -358,8 +471,8 @@ module soc #()(
 
         .req_valid_i    (xip_req_valid),
         .req_addr_i     (trunc_address),
-        .req_value_i    (core_req_value),
-        .req_wstrb_i    (core_req_wstrb),
+        .req_value_i    (mmu_req_value),
+        .req_wstrb_i    (mmu_req_wstrb),
         
         .req_ready_o    (xip_req_ready),
         .resp_valid_o   (xip_resp_valid),
@@ -380,8 +493,8 @@ module soc #()(
 
         .req_valid_i    (spi_req_valid),
         .req_addr_i     (trunc_address),
-        .req_value_i    (core_req_value),
-        .req_wstrb_i    (core_req_wstrb),
+        .req_value_i    (mmu_req_value),
+        .req_wstrb_i    (mmu_req_wstrb),
         
         .req_ready_o    (spi_req_ready),
         .resp_valid_o   (spi_resp_valid),
