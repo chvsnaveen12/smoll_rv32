@@ -18,8 +18,8 @@ static vluint64_t main_time = 0;
 double sc_time_stamp(void) { return main_time; }
 
 /* ── Tunables ────────────────────────────────────────────────────── */
-#define REQ_READY_LATENCY   50
-#define RESP_VALID_LATENCY  10
+#define REQ_READY_LATENCY   0
+#define RESP_VALID_LATENCY  1
 // #define MAX_CYCLES          387000000
 #define MAX_CYCLES          3870000000
 

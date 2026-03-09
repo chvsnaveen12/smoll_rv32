@@ -68,6 +68,7 @@ module mmu_tb #()(
         .resp_ex_code_o(core_resp_ex_code),
 
         .fence_i(fence),
+        .state_o(),
 
         // SoC - Bus Interface
         .req_valid_o(req_valid_o),

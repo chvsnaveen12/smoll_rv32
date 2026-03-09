@@ -8,7 +8,7 @@ module cache_tb #(
     // Width of wstrb (width of data bus in words)
     parameter STRB_WIDTH = (DATA_WIDTH/8),
     // Width of ID signal
-    parameter ID_WIDTH = 8
+    parameter ID_WIDTH = 4
 )(
     input  logic    clk_i,
     input  logic    rst_ni,
@@ -23,7 +23,7 @@ module cache_tb #(
     output logic           resp_valid_o,
     output logic [31:0]    resp_value_o
 );
-
+    // These are used to connect the axi_ram to the cache
     logic [ID_WIDTH-1:0]    axi_awid;
     logic [ADDR_WIDTH-1:0]  axi_awaddr;
     logic [7:0]             axi_awlen;

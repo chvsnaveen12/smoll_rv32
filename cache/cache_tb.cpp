@@ -21,11 +21,13 @@ u_int32_t read(Vcache_tb *top, VerilatedVcdC *tfp, u_int32_t addr){
     top->req_addr_i = addr;
     top->req_wstrb_i = 0x0;
     vluint64_t timeout = 1000;
+
     do{
         ready = top->req_ready_o;
         tick(top, tfp);
         if(!timeout--) break;
-    }while(!ready);
+    } while(!ready);
+
     top->req_valid_i = 0;
     tick(top, tfp);
 
@@ -34,6 +36,7 @@ u_int32_t read(Vcache_tb *top, VerilatedVcdC *tfp, u_int32_t addr){
         tick(top, tfp);
         if(!timeout--) break;
     }
+
     u_int32_t ret_val = top->resp_value_o;
     tick(top, tfp);
     return ret_val;
@@ -45,13 +48,14 @@ void write(Vcache_tb *top, VerilatedVcdC *tfp, u_int32_t addr, u_int32_t value){
     top->req_value_i = value;
     top->req_addr_i  = addr;
     top->req_wstrb_i = 0xf;
+
     vluint64_t timeout = 1000;
     do{
         ready = top->req_ready_o;
         tick(top, tfp);
         if(!timeout--) break;
-        printf("TImeout: %ld\n", timeout);
-    }while(!ready);
+    } while(!ready);
+
     top->req_valid_i = 0;
     top->req_value_i = 0;
     top->req_addr_i  = 0;
@@ -78,12 +82,6 @@ int main(int argc, char **argv, char **env){
     dut->rst_ni = 1;
     for(int i = 0; i < 5; i++) tick(dut, tfp);
 
-    
-    // dut->req_valid_i = 1;
-    // dut->req_value_i = 0;
-    // dut->req_addr_i  = 0;
-    // dut->req_wstrb_i = 0;
-
     write(dut, tfp, 0x0, 0x1);
     write(dut, tfp, 0x8, 0x2);
     write(dut, tfp, 0x10, 0x3);
@@ -100,11 +98,6 @@ int main(int argc, char **argv, char **env){
         printf("Read at %d: 0x%08x\n",i*4, read(dut, tfp, i*4));
 
     printf("Read at 4096: 0x%08x\n", read(dut, tfp, 4096));
-    // vluint64_t timeout = 100;
-    // while(!dut->req_valid_i || !dut->req_ready_o){
-    //     tick(dut, tfp);
-    //     if(!timeout--) break;
-    // }
 
     for(int i = 0; i < 200; i++)
         tick(dut, tfp);

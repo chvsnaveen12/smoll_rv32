@@ -29,21 +29,6 @@ module clint #(
 
     assign req_ready_o = 1'b1;
 
-    // always_ff @(posedge clk_i) begin
-    //     if(!rst_ni) begin
-    //         mtime <= 0;
-    //         mtimecmp <= 64'hffffffffffffffff;
-    //         msip <= 0;
-    //         mtime_div <= 0;
-    //     end else begin
-    //         mtime_div <= mtime_div + 1;
-    //         if(mtime_div == MTIME_DIV) begin
-    //             mtime <= mtime + 1;
-    //             mtime_div <= 0;
-    //         end
-    //     end
-    // end
-
     always_ff @(posedge clk_i) begin
         if(!rst_ni) begin
             resp_valid_o <= 1'b0;
