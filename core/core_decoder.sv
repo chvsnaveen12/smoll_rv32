@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Naveen Chavali
+
 `timescale 1ns/1ps
 module core_decoder import core_defs::*;#()(
     // input   fd_interface_t      fd_interface_i,
@@ -48,7 +51,7 @@ module core_decoder import core_defs::*;#()(
     assign arith_sub_o = instr_i[30];
     // Immediate assignment
     always_comb begin
-        case(opcode_e'(opcode))
+        case (opcode_e'(opcode))
             OPCODE_JALR, OPCODE_LOAD, OPCODE_ALUIMM:
                 immediate_o = imm_i;
             OPCODE_STORE:
@@ -71,28 +74,28 @@ module core_decoder import core_defs::*;#()(
         op_type_o = OP_ALU;
         priv_op_o = PRIVOP_ECALL;
 
-        case(opcode_e'(opcode))
+        case (opcode_e'(opcode))
             OPCODE_LUI, OPCODE_AUIPC: begin
                 op_type_o = OP_LUI_AUIPC;
             end
             OPCODE_JAL, OPCODE_JALR: begin
                 op_type_o = OP_JUMP;
-                // if(funct3 != 0)
+                // if (funct3 != 0)
                 //     valid_o = 0;
             end
             OPCODE_BRANCH: begin
                 op_type_o = OP_BRANCH;
-                // if(cmp_op_e'(funct3) == CMP_RSV0 || cmp_op_e'(funct3) == CMP_RSV1)
+                // if (cmp_op_e'(funct3) == CMP_RSV0 || cmp_op_e'(funct3) == CMP_RSV1)
                 //     valid_o = 0;
             end
             OPCODE_LOAD: begin
                 op_type_o = OP_LOAD;
-                // if(mem_op_e'(funct3) == MEM_RSV0 || mem_op_e'(funct3) == MEM_RSV1 || mem_op_e'(funct3) == MEM_RSV2)
+                // if (mem_op_e'(funct3) == MEM_RSV0 || mem_op_e'(funct3) == MEM_RSV1 || mem_op_e'(funct3) == MEM_RSV2)
                     // valid_o = 0;
             end
             OPCODE_STORE: begin
                 op_type_o = OP_STORE;
-                // if(mem_op_e'(funct3) != MEM_8 && mem_op_e'(funct3) != MEM_16 && mem_op_e'(funct3) != MEM_32)
+                // if (mem_op_e'(funct3) != MEM_8 && mem_op_e'(funct3) != MEM_16 && mem_op_e'(funct3) != MEM_32)
                     // valid_o = 0;
             end
             OPCODE_ALUIMM: begin
@@ -104,19 +107,19 @@ module core_decoder import core_defs::*;#()(
             end
             OPCODE_FENCE: begin
                 op_type_o = OP_FENCE;
-                // if(fence_op_e'(funct3) != FENCE && fence_op_e'(funct3) != FENCE_I)
+                // if (fence_op_e'(funct3) != FENCE && fence_op_e'(funct3) != FENCE_I)
                 //     valid = 0;
             end
             OPCODE_SYSTEM: begin
-                case(sys_op_e'(funct3))
+                case (sys_op_e'(funct3))
                     SYS_PRIV: begin
-                        case(funct7)
+                        case (funct7)
                             `FUNCT7_ECALL_EBREAK: begin
                                 op_type_o = OP_SYSTEM;
                                 priv_op_o = instr_i[20] ? PRIVOP_EBREAK : PRIVOP_ECALL;
                             end
                             `FUNCT7_SRET_WFI: begin
-                                if(rs2_idx == 5'b00010 && priv_i == PRIV_SUPERVISOR) begin
+                                if (rs2_idx == 5'b00010 && priv_i == PRIV_SUPERVISOR) begin
                                     op_type_o = OP_SYSTEM;
                                     priv_op_o = PRIVOP_SRET;
                                 end
@@ -124,7 +127,7 @@ module core_decoder import core_defs::*;#()(
                                     op_type_o = OP_FENCE;
                             end
                             `FUNCT7_MRET:
-                                if(priv_i == PRIV_MACHINE) begin
+                                if (priv_i == PRIV_MACHINE) begin
                                     op_type_o = OP_SYSTEM;
                                     priv_op_o = PRIVOP_MRET;
                                 end
@@ -158,7 +161,7 @@ module core_decoder import core_defs::*;#()(
         use_pc_o = 0;
         use_imm_o = 0;
 
-        case(opcode_e'(opcode))
+        case (opcode_e'(opcode))
             OPCODE_LUI: begin
                 rs1_sel_o = 0;
                 use_imm_o = 1;

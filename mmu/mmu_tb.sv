@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Naveen Chavali
+
 `timescale 1ns/1ps
 module mmu_tb #()(
     input logic clk_i,
@@ -33,7 +36,7 @@ module mmu_tb #()(
     logic [1:0]     core_req_priv;
     logic [1:0]     core_req_mpp;
     logic           core_req_ready;
-    
+
     logic           core_resp_valid;
     logic [31:0]    core_resp_value;
     logic           core_resp_ex_valid;
@@ -99,7 +102,7 @@ module mmu_tb #()(
         .req_priv_o     (core_req_priv),
         .req_ready_i    (core_req_ready),
         .pc_o           (),
-        
+
         .resp_valid_i   (core_resp_valid),
         .resp_value_i   (core_resp_value),
         .resp_ex_valid_i(core_resp_ex_valid),

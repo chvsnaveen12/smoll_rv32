@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Naveen Chavali
+
 module uart(
     input  logic clk_i,
     input  logic rst_ni,
@@ -44,7 +47,7 @@ module uart(
 
     // RX loop
     always_ff @(posedge clk_i) begin
-        if(!rst_ni) begin
+        if (!rst_ni) begin
             rx_busy <= 0;
             rx_cnt <= 0;
             rx_bit_cnt <= 0;
@@ -57,20 +60,20 @@ module uart(
                 uart_rx_irq_o <= 0;
             end
 
-            if(!rx_busy) begin
-                if(!rx_synced) begin
+            if (!rx_busy) begin
+                if (!rx_synced) begin
                     rx_busy <= 1;
                     rx_cnt <= div >> 1;
                     rx_bit_cnt <= 0;
                 end
             end
             else begin
-                if(rx_cnt == 0) begin
+                if (rx_cnt == 0) begin
                     rx_cnt <= div;
                     rx_bit_cnt <= rx_bit_cnt + 1;
                     rx_data <= {rx_synced, rx_data[9:1]};
-                    if(rx_bit_cnt == 9) begin
-                        if(rx_synced) begin // stop bit valid
+                    if (rx_bit_cnt == 9) begin
+                        if (rx_synced) begin // stop bit valid
                             uart_rx_irq_o <= 1;
                             rx_latch <= rx_data[9:2];
                         end
@@ -91,7 +94,7 @@ module uart(
     logic tx_send;
 
     always_ff @(posedge clk_i) begin
-        if(!rst_ni) begin
+        if (!rst_ni) begin
             tx_o <= 1'b1;
             tx_cnt <= 0;
             tx_bit_cnt <= 0;
@@ -105,14 +108,14 @@ module uart(
                 tx_cnt <= div;
                 tx_bit_cnt <= 0;
             end
-            else if(tx_send) begin
+            else if (tx_send) begin
                 tx_cnt <= tx_cnt - 1;
-                if(tx_cnt == 0) begin
+                if (tx_cnt == 0) begin
                     tx_o <= tx_data[0];
                     tx_data <= tx_data >> 1;
                     tx_cnt <= div;
                     tx_bit_cnt <= tx_bit_cnt + 1;
-                    if(tx_bit_cnt == 10) begin
+                    if (tx_bit_cnt == 10) begin
                         tx_send <= 0;
                         tx_bit_cnt <= 0;
                     end
@@ -128,16 +131,16 @@ module uart(
         tx_start <= 0;
         tx_byte <= 0;
 
-        if(!rst_ni) begin
+        if (!rst_ni) begin
             resp_valid_o <= 1'b0;
             resp_value_o <= 32'b0;
         end else begin
             resp_valid_o <= 1'b0;
             resp_value_o <= 32'b0;
-            if(req_valid_i) begin
+            if (req_valid_i) begin
                 resp_valid_o <= 1'b1;
-                if(~|req_wstrb_i) begin
-                    case(req_addr_i)
+                if (~|req_wstrb_i) begin
+                    case (req_addr_i)
                         32'h0: begin
                             resp_value_o <= {24'b0, rx_latch};
                         end
@@ -153,8 +156,8 @@ module uart(
                         end
                     endcase
                 end
-                else if(req_wstrb_i == 4'b1111) begin
-                    case(req_addr_i)
+                else if (req_wstrb_i == 4'b1111) begin
+                    case (req_addr_i)
                         32'h8: begin
                             tx_byte <= req_value_i[7:0];
                             tx_start <= 1'b1;

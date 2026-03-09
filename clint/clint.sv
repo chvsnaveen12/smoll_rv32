@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Naveen Chavali
+
 module clint #(
     parameter MTIME_DIV = 1000
 )(
@@ -9,7 +12,7 @@ module clint #(
     input  logic [31:0] req_addr_i,
     input  logic [31:0] req_value_i,
     input  logic [3:0]  req_wstrb_i,
-    
+
     output logic        req_ready_o,
     output logic        resp_valid_o,
     output logic [31:0] resp_value_o,
@@ -30,7 +33,7 @@ module clint #(
     assign req_ready_o = 1'b1;
 
     always_ff @(posedge clk_i) begin
-        if(!rst_ni) begin
+        if (!rst_ni) begin
             resp_valid_o <= 1'b0;
             resp_value_o <= 32'b0;
 
@@ -43,14 +46,14 @@ module clint #(
             resp_value_o <= 32'h0;
 
             mtime_div <= mtime_div + 1;
-            if(mtime_div == MTIME_DIV) begin
+            if (mtime_div == MTIME_DIV) begin
                 mtime <= mtime + 1;
                 mtime_div <= 0;
             end
 
-            if(req_valid_i) begin
-                if(~|req_wstrb_i) begin
-                    case(req_addr_i)
+            if (req_valid_i) begin
+                if (~|req_wstrb_i) begin
+                    case (req_addr_i)
                         32'h0: begin
                             resp_valid_o <= 1'b1;
                             resp_value_o <= msip;
@@ -73,8 +76,8 @@ module clint #(
                         end
                     endcase
                 end
-                else if(req_wstrb_i == 4'b1111) begin
-                    case(req_addr_i)
+                else if (req_wstrb_i == 4'b1111) begin
+                    case (req_addr_i)
                         32'h0: begin
                             resp_valid_o <= 1'b1;
                             msip <= req_value_i;

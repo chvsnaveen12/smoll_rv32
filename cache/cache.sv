@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Naveen Chavali
+
 `timescale 1ns / 1ps
 
 module cache #(
@@ -117,17 +120,17 @@ module cache #(
         m_axi_arvalid <= 1'b0;
         m_axi_wvalid  <= 1'b0;
         m_axi_wlast   <= 1'b0;
-        if(!rst_ni) begin
+        if (!rst_ni) begin
             state_q <= STATE_IDLE;
-            for(integer i = 0; i < 64; i++)
+            for (integer i = 0; i < 64; i++)
                 tag_ram[i] <= 20'h00000;
         end else begin
             resp_valid_o <= 0;
-            case(state_q)
+            case (state_q)
                 STATE_IDLE: begin
                     req_ready_o <= 1;
-                    if(req_valid_i) begin
-                        if(!tag_hit) begin
+                    if (req_valid_i) begin
+                        if (!tag_hit) begin
                             state_q       <= STATE_WRITE_ADDR;
                             req_index_q   <= req_index;
                             req_offset_q  <= req_offset;
@@ -136,10 +139,10 @@ module cache #(
                             req_value_q   <= req_value_i;
                             req_ready_o   <= 0;
                         end else begin
-                            if(req_wstrb_i[0]) data_ram[{req_index, req_offset[5:2]}][7:0]   <= req_value_i[7:0];
-                            if(req_wstrb_i[1]) data_ram[{req_index, req_offset[5:2]}][15:8]  <= req_value_i[15:8];
-                            if(req_wstrb_i[2]) data_ram[{req_index, req_offset[5:2]}][23:16] <= req_value_i[23:16];
-                            if(req_wstrb_i[3]) data_ram[{req_index, req_offset[5:2]}][31:24] <= req_value_i[31:24];
+                            if (req_wstrb_i[0]) data_ram[{req_index, req_offset[5:2]}][7:0]   <= req_value_i[7:0];
+                            if (req_wstrb_i[1]) data_ram[{req_index, req_offset[5:2]}][15:8]  <= req_value_i[15:8];
+                            if (req_wstrb_i[2]) data_ram[{req_index, req_offset[5:2]}][23:16] <= req_value_i[23:16];
+                            if (req_wstrb_i[3]) data_ram[{req_index, req_offset[5:2]}][31:24] <= req_value_i[31:24];
                             resp_valid_o <= 1;
                             resp_value_o <= data_ram[{req_index, req_offset[5:2]}];
                         end
@@ -148,7 +151,7 @@ module cache #(
                 STATE_WRITE_ADDR: begin
                     m_axi_awaddr  <= {tag_ram[req_index_q], req_index_q, 6'b000000};
                     m_axi_awvalid <= 1'b1;
-                    if(m_axi_awready && m_axi_awvalid) begin
+                    if (m_axi_awready && m_axi_awvalid) begin
                         state_q  <= STATE_WRITE_DATA;
                         count_q  <= 1;
                     end
@@ -157,10 +160,10 @@ module cache #(
                     m_axi_wdata  <= data_ram[{req_index_q, 4'b0000}];
                     m_axi_wvalid <= 1'b1;
                     m_axi_wlast  <= 1'b0;
-                    if(m_axi_wready && m_axi_wvalid) begin
+                    if (m_axi_wready && m_axi_wvalid) begin
                         m_axi_wdata <= data_ram[{req_index_q, count_q}];
                         count_q     <= count_q + 1;
-                        if(count_q == 15) begin
+                        if (count_q == 15) begin
                             state_q      <= STATE_READ_ADDR;
                             m_axi_wlast  <= 1'b1;
                         end
@@ -169,27 +172,27 @@ module cache #(
                 STATE_READ_ADDR: begin
                     m_axi_araddr  <= {req_tag_q, req_index_q, 6'b000000};
                     m_axi_arvalid <= 1'b1;
-                    if(m_axi_arready && m_axi_arvalid) begin
+                    if (m_axi_arready && m_axi_arvalid) begin
                         state_q <= STATE_READ_DATA;
                         count_q <= 0;
                     end
                 end
                 STATE_READ_DATA: begin
                     m_axi_rready <= 1'b1;
-                    if(m_axi_rvalid && m_axi_rready) begin
+                    if (m_axi_rvalid && m_axi_rready) begin
                         data_ram[{req_index_q, count_q}] <= m_axi_rdata;
                         count_q <= count_q + 1;
-                        if(m_axi_rlast)
+                        if (m_axi_rlast)
                             state_q <= STATE_FINISH;
                     end
                 end
                 STATE_FINISH: begin
                     tag_ram[req_index_q] <= req_tag_q;
                     state_q <= STATE_IDLE;
-                    if(req_wstrb_q[0]) data_ram[{req_index_q, req_offset_q[5:2]}][7:0]   <= req_value_q[7:0];
-                    if(req_wstrb_q[1]) data_ram[{req_index_q, req_offset_q[5:2]}][15:8]  <= req_value_q[15:8];
-                    if(req_wstrb_q[2]) data_ram[{req_index_q, req_offset_q[5:2]}][23:16] <= req_value_q[23:16];
-                    if(req_wstrb_q[3]) data_ram[{req_index_q, req_offset_q[5:2]}][31:24] <= req_value_q[31:24];
+                    if (req_wstrb_q[0]) data_ram[{req_index_q, req_offset_q[5:2]}][7:0]   <= req_value_q[7:0];
+                    if (req_wstrb_q[1]) data_ram[{req_index_q, req_offset_q[5:2]}][15:8]  <= req_value_q[15:8];
+                    if (req_wstrb_q[2]) data_ram[{req_index_q, req_offset_q[5:2]}][23:16] <= req_value_q[23:16];
+                    if (req_wstrb_q[3]) data_ram[{req_index_q, req_offset_q[5:2]}][31:24] <= req_value_q[31:24];
                     resp_valid_o <= 1;
                     resp_value_o <= data_ram[{req_index_q, req_offset_q[5:2]}];
                     req_ready_o  <= 1;

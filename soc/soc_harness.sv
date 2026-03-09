@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Naveen Chavali
+
 `timescale 1ns/1ps
 
 module soc_harness (
@@ -24,7 +27,7 @@ module soc_harness (
     logic [2:0]     m_axi_awprot;
     logic           m_axi_awvalid;
     logic           m_axi_awready;
-    
+
     logic [31:0]    m_axi_wdata;
     logic [3:0]     m_axi_wstrb;
     logic           m_axi_wlast;
@@ -61,7 +64,7 @@ module soc_harness (
     ) ram_inst (
         .clk            (clk_i),
         .rst            (!rst_ni),
-        
+
         .s_axi_awid     (m_axi_awid),
         .s_axi_awaddr   (m_axi_awaddr),
         .s_axi_awlen    (m_axi_awlen),
@@ -72,18 +75,18 @@ module soc_harness (
         .s_axi_awprot   (m_axi_awprot),
         .s_axi_awvalid  (m_axi_awvalid),
         .s_axi_awready  (m_axi_awready),
-        
+
         .s_axi_wdata    (m_axi_wdata),
         .s_axi_wstrb    (m_axi_wstrb),
         .s_axi_wlast    (m_axi_wlast),
         .s_axi_wvalid   (m_axi_wvalid),
         .s_axi_wready   (m_axi_wready),
-        
+
         .s_axi_bid      (m_axi_bid),
         .s_axi_bresp    (m_axi_bresp),
         .s_axi_bvalid   (m_axi_bvalid),
         .s_axi_bready   (m_axi_bready),
-        
+
         .s_axi_arid     (m_axi_arid),
         .s_axi_araddr   (m_axi_araddr),
         .s_axi_arlen    (m_axi_arlen),
@@ -94,7 +97,7 @@ module soc_harness (
         .s_axi_arprot   (m_axi_arprot),
         .s_axi_arvalid  (m_axi_arvalid),
         .s_axi_arready  (m_axi_arready),
-        
+
         .s_axi_rid      (m_axi_rid),
         .s_axi_rdata    (m_axi_rdata),
         .s_axi_rresp    (m_axi_rresp),
@@ -128,7 +131,7 @@ module soc_harness (
         .m_axi_awprot   (m_axi_awprot),
         .m_axi_awvalid  (m_axi_awvalid),
         .m_axi_awready  (m_axi_awready),
-        
+
         .m_axi_wdata    (m_axi_wdata),
         .m_axi_wstrb    (m_axi_wstrb),
         .m_axi_wlast    (m_axi_wlast),

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Naveen Chavali
+
 `timescale 1ns / 1ps
 
 module cache_tb #(
@@ -19,7 +22,7 @@ module cache_tb #(
     input  logic [31:0]    req_addr_i,
     input  logic [3:0]     req_wstrb_i,
     output logic           req_ready_o,
-    
+
     output logic           resp_valid_o,
     output logic [31:0]    resp_value_o
 );
@@ -109,7 +112,7 @@ module cache_tb #(
         .req_addr_i(req_addr_i),
         .req_wstrb_i(req_wstrb_i),
         .req_ready_o(req_ready_o),
-    
+
         .resp_valid_o(resp_valid_o),
         .resp_value_o(resp_value_o),
 

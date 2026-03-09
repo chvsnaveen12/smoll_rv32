@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Naveen Chavali
+
 `timescale 1ns/1ps
 module core_csrs import core_defs::*;#()(
     // Global signals
@@ -45,7 +48,7 @@ module core_csrs import core_defs::*;#()(
 );
     // Current privilege level
     priv_e priv_q, priv_d;
-    
+
     assign priv_o = priv_q;
     assign satp_o = satp_q;
     assign mprv_o = xstatus_q[17];
@@ -91,7 +94,7 @@ module core_csrs import core_defs::*;#()(
     logic [31:0] int_code;
 
     always_comb begin
-        case(priv_q)
+        case (priv_q)
             PRIV_MACHINE:
                 machine_int_enabled = xstatus_q[`CSR_MSTATUS_MIE_BIT];
             default:
@@ -100,7 +103,7 @@ module core_csrs import core_defs::*;#()(
     end
 
     always_comb begin
-        case(priv_q)
+        case (priv_q)
             PRIV_MACHINE:
                 supervisor_int_enabled = 1'b0;
             PRIV_SUPERVISOR:
@@ -122,24 +125,24 @@ module core_csrs import core_defs::*;#()(
     always_comb begin
         int_code = 0;
         int_delegated = 1'b0;
-        if(meip_valid_d) begin
+        if (meip_valid_d) begin
             int_code        = (32'h80000000) | `CSR_MEIP_CODE;
         end
-        else if(mtip_valid_d) begin
+        else if (mtip_valid_d) begin
             int_code        = (32'h80000000) | `CSR_MTIP_CODE;
         end
-        else if(msip_valid_d) begin
+        else if (msip_valid_d) begin
             int_code        = (32'h80000000) | `CSR_MSIP_CODE;
         end
-        if(seip_valid_d) begin
+        if (seip_valid_d) begin
             int_code        = (32'h80000000) | `CSR_SEIP_CODE;
             int_delegated   = mideleg_q[`CSR_SEIP_BIT];
         end
-        else if(stip_valid_d) begin
+        else if (stip_valid_d) begin
             int_code    = (32'h80000000) | `CSR_STIP_CODE;
             int_delegated   = mideleg_q[`CSR_STIP_BIT];
         end
-        else if(ssip_valid_d) begin
+        else if (ssip_valid_d) begin
             int_code    = (32'h80000000) | `CSR_SSIP_CODE;
             int_delegated   = mideleg_q[`CSR_SSIP_BIT];
         end
@@ -176,7 +179,7 @@ module core_csrs import core_defs::*;#()(
         mip_d[`CSR_MSIP_BIT]        = m_soft_irq_i;
         mip_d[`CSR_SEIP_BIT]        = s_ext_irq_i;
 
-        if(exception_i && !trap_delegated || int_take_i && !int_delegated) begin
+        if (exception_i && !trap_delegated || int_take_i && !int_delegated) begin
             mepc_d                          = instr_pc_i;
             mcause_d                        = exception_i ? exception_code_i : int_code;
             mtval_d                         = exception_tval_i;
@@ -189,7 +192,7 @@ module core_csrs import core_defs::*;#()(
 
             updated_pc_o                        = mtvec_q;
         end
-        else if(exception_i && trap_delegated || int_take_i && int_delegated) begin
+        else if (exception_i && trap_delegated || int_take_i && int_delegated) begin
             sepc_d                          = instr_pc_i;
             scause_d                        = exception_i ? exception_code_i : int_code;
             stval_d                         = exception_tval_i;
@@ -203,7 +206,7 @@ module core_csrs import core_defs::*;#()(
             updated_pc_o                        = stvec_q;
 
         end
-        else if(mret_i) begin
+        else if (mret_i) begin
             xstatus_d[`CSR_MSTATUS_MIE_BIT]     = xstatus_q[`CSR_MSTATUS_MPIE_BIT];
             xstatus_d[`CSR_MSTATUS_MPIE_BIT]    = 1'b1;
             priv_d                              = priv_e'(xstatus_q[`CSR_MSTATUS_MPP_BIT+:2]);
@@ -212,7 +215,7 @@ module core_csrs import core_defs::*;#()(
             updated_pc_o                        = mepc_q;
         end
 
-        else if(sret_i) begin
+        else if (sret_i) begin
             xstatus_d[`CSR_MSTATUS_SIE_BIT]     = xstatus_q[`CSR_MSTATUS_SPIE_BIT];
             xstatus_d[`CSR_MSTATUS_SPIE_BIT]    = 1'b1;
             priv_d                              = priv_e'({1'b0, xstatus_q[`CSR_MSTATUS_SPP_BIT]});
@@ -220,8 +223,8 @@ module core_csrs import core_defs::*;#()(
             updated_pc_o                        = sepc_q;
         end
 
-        else if(waddr_i != 0) begin
-            case(waddr_i)
+        else if (waddr_i != 0) begin
+            case (waddr_i)
                 `CSR_M_STATUS_ADDR:
                     xstatus_d       = (xstatus_q & ~`CSR_MSTATUS_MASK) | (wdata_i & `CSR_MSTATUS_MASK);
                 `CSR_M_EDELEG_ADDR:
@@ -268,7 +271,7 @@ module core_csrs import core_defs::*;#()(
     end
 
     always_ff @(posedge clk_i) begin
-        if(!rst_ni) begin
+        if (!rst_ni) begin
             priv_q          <= PRIV_MACHINE;
             xstatus_q       <= 32'h0;
             medeleg_q       <= 32'h0;
@@ -315,18 +318,18 @@ module core_csrs import core_defs::*;#()(
         csr_read_valid = 1'b1;
         csr_priv_valid = 1'b1;
 
-        if(priv_e'(raddr_i[`CSR_PRIV_BIT+1:`CSR_PRIV_BIT]) == PRIV_MACHINE && priv_q != PRIV_MACHINE)
-            csr_priv_valid = 1'b0;
-        
-        else if(priv_e'(raddr_i[`CSR_PRIV_BIT+1:`CSR_PRIV_BIT]) == PRIV_SUPERVISOR && priv_q != PRIV_MACHINE && priv_q != PRIV_SUPERVISOR)
+        if (priv_e'(raddr_i[`CSR_PRIV_BIT+1:`CSR_PRIV_BIT]) == PRIV_MACHINE && priv_q != PRIV_MACHINE)
             csr_priv_valid = 1'b0;
 
-        case(raddr_i)
+        else if (priv_e'(raddr_i[`CSR_PRIV_BIT+1:`CSR_PRIV_BIT]) == PRIV_SUPERVISOR && priv_q != PRIV_MACHINE && priv_q != PRIV_SUPERVISOR)
+            csr_priv_valid = 1'b0;
+
+        case (raddr_i)
             `CSR_M_HARTID_ADDR:
                 rdata_o = 32'h0;
             `CSR_M_VENDORID_ADDR, `CSR_M_IMPID_ADDR, `CSR_M_ARCHID_ADDR:
                 rdata_o = 0;
-            
+
             `CSR_M_STATUS_ADDR:
                 rdata_o = xstatus_q & `CSR_MSTATUS_MASK;
             `CSR_M_STATUSH_ADDR:
@@ -362,7 +365,7 @@ module core_csrs import core_defs::*;#()(
             `CSR_S_SCRATCH_ADDR:
                 rdata_o = sscratch_q;
             `CSR_S_EPC_ADDR:
-                rdata_o = sepc_q; 
+                rdata_o = sepc_q;
             `CSR_S_CAUSE_ADDR:
                 rdata_o = scause_q;
             `CSR_S_TVAL_ADDR:

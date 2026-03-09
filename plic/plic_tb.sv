@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Naveen Chavali
+
 module plic_tb;
     logic        clk, rst_n;
     logic        req_valid;

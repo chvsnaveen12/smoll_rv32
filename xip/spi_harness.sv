@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Naveen Chavali
+
 `timescale 1ns/1ps
 
 module spi_harness #()(
@@ -38,7 +41,7 @@ module spi_harness #()(
 
     assign io0 = mosi;
     assign miso = io1;
-    
+
     // Pullups for unused pins
     wire io2, io3;
     assign io2 = 1'b1;

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Naveen Chavali
+
 module flash_controller (
     input   logic           clk_i,
     input   logic           rst_ni,
@@ -25,15 +28,15 @@ module flash_controller (
 
     logic [7:0]     spi_count;
     logic [31:0]    shift_buffer;
-    
+
     // Div/4 clock logic
     logic [1:0]     clk_div_cnt;
     logic           spi_clk_q;
     logic           spi_tick;  // Pulses once per SPI clock cycle (on rising edge of spi_clk)
-    
+
     // spi_tick pulses when clk_div_cnt transitions from 1 to 2 (rising edge of spi_clk)
     assign spi_tick = (state_q == STATE_REFILL) && (clk_div_cnt == 2'b01);
-    
+
     assign sck_o = spi_clk_q;
 
     // Unified posedge block - handles clock division, FSM, and MOSI
@@ -51,7 +54,7 @@ module flash_controller (
             mosi_o <= 1'b0;
         end else begin
             resp_valid_o <= 1'b0;
-            
+
             // Clock divider logic
             if (state_q == STATE_REFILL) begin
                 clk_div_cnt <= clk_div_cnt + 1;
@@ -64,14 +67,14 @@ module flash_controller (
                 clk_div_cnt <= 2'b00;
                 spi_clk_q <= 1'b0;
             end
-            
-            case(state_q)
+
+            case (state_q)
                 STATE_IDLE: begin
                     req_ready_o <= 1'b1;
                     cs_no <= 1'b1;
                     spi_count <= 8'b0;
                     mosi_o <= 1'b0;
-                    if(req_valid_i) begin
+                    if (req_valid_i) begin
                         req_ready_o <= 1'b0;
                         state_q <= STATE_REFILL;
                         shift_buffer <= {8'h03, req_addr_i[23:0]};
@@ -83,21 +86,21 @@ module flash_controller (
 
                 STATE_REFILL: begin
                     req_ready_o <= 1'b0;
-                    
+
                     // Update MOSI on falling edge of SPI clock (clk_div_cnt == 3)
                     if (clk_div_cnt == 2'b11) begin
-                        if(spi_count < 32)
+                        if (spi_count < 32)
                             mosi_o <= shift_buffer[31];
                         else
                             mosi_o <= 1'b0;
                     end
-                    
+
                     // Advance SPI state on rising edge of divided clock
                     if (spi_tick) begin
                         spi_count <= spi_count + 1;
                         shift_buffer <= {shift_buffer[30:0], miso_i};
-                        
-                        if(spi_count == 63) begin
+
+                        if (spi_count == 63) begin
                             state_q <= STATE_FINISH;
                             resp_value_o <= {shift_buffer[6:0], miso_i, shift_buffer[14:7], shift_buffer[22:15], shift_buffer[30:23]};
                         end

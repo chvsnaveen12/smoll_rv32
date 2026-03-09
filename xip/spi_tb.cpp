@@ -1,8 +1,11 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Naveen Chavali
+
 #include "Vspi_harness.h"
 #include "verilated.h"
 #include "verilated_vcd_c.h"
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 
 // Global time for waveforms
 vluint64_t main_time = 0;
@@ -10,16 +13,18 @@ vluint64_t main_time = 0;
 // -------------------------------------------------------------------------
 // Helper: Simulation Tick
 // -------------------------------------------------------------------------
-void tick(Vspi_harness* top, VerilatedVcdC* tfp) {
+void tick(Vspi_harness *top, VerilatedVcdC *tfp) {
     // Falling Edge
     top->clk_i = 0;
     top->eval();
-    if (tfp) tfp->dump(main_time++);
+    if (tfp)
+        tfp->dump(main_time++);
 
     // Rising Edge
     top->clk_i = 1;
     top->eval();
-    if (tfp) tfp->dump(main_time++);
+    if (tfp)
+        tfp->dump(main_time++);
 }
 
 // -------------------------------------------------------------------------
@@ -31,16 +36,16 @@ struct Result {
     bool success;
 };
 
-Result perform_read(Vspi_harness* top, VerilatedVcdC* tfp, uint32_t addr) {
+Result perform_read(Vspi_harness *top, VerilatedVcdC *tfp, uint32_t addr) {
     Result res = {0, 0, false};
-    
+
     // 1. Assert Request
     top->req_valid_i = 1;
     top->req_addr_i = addr;
-    
+
     // Tick to let the controller see the request
-    tick(top, tfp); 
-    
+    tick(top, tfp);
+
     // De-assert request
     top->req_valid_i = 0;
     top->req_addr_i = 0;
@@ -62,20 +67,20 @@ Result perform_read(Vspi_harness* top, VerilatedVcdC* tfp, uint32_t addr) {
     res.data = top->resp_value_o;
     res.latency = cycles;
     res.success = true;
-    
+
     // Tick once more to clear the valid flag visibility
     tick(top, tfp);
-    
+
     return res;
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
     Verilated::commandArgs(argc, argv);
     Verilated::traceEverOn(true);
 
-    Vspi_harness* top = new Vspi_harness;
-    VerilatedVcdC* tfp = new VerilatedVcdC;
-    
+    Vspi_harness *top = new Vspi_harness;
+    VerilatedVcdC *tfp = new VerilatedVcdC;
+
     top->trace(tfp, 99);
     tfp->open("spi_tb.vcd");
 
@@ -93,14 +98,16 @@ int main(int argc, char** argv) {
 
     // --- Reset Sequence ---
     std::cout << "[INIT] Resetting...\n";
-    for (int i = 0; i < 10; i++) tick(top, tfp);
+    for (int i = 0; i < 10; i++)
+        tick(top, tfp);
     top->rst_ni = 1;
-    for (int i = 0; i < 5; i++) tick(top, tfp);
+    for (int i = 0; i < 5; i++)
+        tick(top, tfp);
 
     // --- Test 1: Basic Read ---
     std::cout << "\n[TEST 1] Read 0x0000\n";
     Result r1 = perform_read(top, tfp, 0x0000);
-    
+
     // With div/4 clock, expect ~256 cycles (64 SPI bits * 4 clocks per bit)
     if (r1.success) {
         std::cout << "    Data: 0x" << std::hex << r1.data << "\n";

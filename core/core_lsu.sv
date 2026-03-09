@@ -1,20 +1,5 @@
-    // input   logic           req_ready_i,
-    // input   logic           resp_valid_i,
-    // input   logic [31:0]    resp_value_i,
-    // input   logic           resp_ex_valid_i,
-    // input   logic [31:0]    resp_ex_code_i
-
-    // output  logic           req_valid_o,
-    // output  logic [31:0]    req_addr_o,
-    // output  logic [31:0]    req_value_o,
-    // output  logic [3:0]     req_wstrb_o,
-    // output  mmu_op_e        req_op_o,
-    // output  logic [31:0]    req_satp_o,
-    // output  logic           req_mxr_o,
-    // output  logic           req_sum_o,
-    // output  logic           req_mprv_o,
-    // output  priv_e          req_priv_o,
-
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Naveen Chavali
 
 module core_lsu import core_defs::*;#()(
     input   logic [31:0]    addr_i,
@@ -32,14 +17,14 @@ module core_lsu import core_defs::*;#()(
     logic [3:0] strb;
     logic [31:0] load_data_shifted;
     logic pad;
-    
+
 
     assign req_addr_o = {addr_i[31:2], 2'b00};
     assign byte_offset = addr_i[1:0];
 
     // Valid and strobe assertion
     always_comb begin
-        case(mem_op_i)
+        case (mem_op_i)
             MEM_8, MEM_8U: begin
                 req_valid_o = 1'b1;
                 strb        = 4'b0001;
@@ -62,7 +47,7 @@ module core_lsu import core_defs::*;#()(
     // We'll have to right shift the load data and left shit the store data
     // Shift the load and store data
     always_comb begin
-        case(byte_offset)
+        case (byte_offset)
             2'b00:begin
                 load_data_shifted   = resp_value_i;
 
@@ -93,7 +78,7 @@ module core_lsu import core_defs::*;#()(
     // Sign extend the data
     always_comb begin
         load_data_o = 0;
-        case(mem_op_i)
+        case (mem_op_i)
             MEM_8:
                 load_data_o     = {{24{load_data_shifted[7]}}, load_data_shifted[7:0]};
             MEM_16:

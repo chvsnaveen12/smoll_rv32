@@ -1,4 +1,7 @@
-module soc #()( 
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Naveen Chavali
+
+module soc #()(
     input   logic   clk_i,
     input   logic   rst_ni,
 
@@ -17,7 +20,7 @@ module soc #()(
     output  logic   spi_sd_sck_o,
     output  logic   spi_sd_mosi_o,
     input   logic   spi_sd_miso_i,
-    
+
     output  logic [31:0] pc_o,
     output  logic [2:0]  state_o,
 
@@ -32,7 +35,7 @@ module soc #()(
     output  logic [2:0]     m_axi_awprot,
     output  logic           m_axi_awvalid,
     input   logic           m_axi_awready,
-    
+
     output  logic [31:0]    m_axi_wdata,
     output  logic [3:0]     m_axi_wstrb,
     output  logic           m_axi_wlast,
@@ -89,7 +92,7 @@ module soc #()(
     logic [1:0]     core_req_priv;
     logic [1:0]     core_req_mpp;
     logic           core_req_ready;
-    
+
     logic           core_resp_valid;
     logic [31:0]    core_resp_value;
     logic           core_resp_ex_valid;
@@ -203,7 +206,7 @@ module soc #()(
                 BASE_SPI: begin
                     spi_req_valid    = 1'b1;
                     mmu_req_ready   = spi_req_ready;
-                end 
+                end
                 default: begin
                     // Dummy catches all unmatched addresses
                     dummy_req_valid  = 1'b1;
@@ -287,7 +290,7 @@ module soc #()(
         .req_mprv_o     (core_req_mprv),
         .req_priv_o     (core_req_priv),
         .req_ready_i    (core_req_ready),
-        
+
         .fence_o        (core_fence),
         .pc_o(pc_o),
 
@@ -300,11 +303,11 @@ module soc #()(
         .m_timer_irq_i  (m_timer_irq),
         .m_soft_irq_i   (m_soft_irq),
         .s_ext_irq_i    (s_ext_irq)
-        
+
 //        .m_ext_irq_i    (1'b0),
 //        .m_timer_irq_i  (1'b0),
 //        .m_soft_irq_i   (1'b0),
-//        .s_ext_irq_i    (1'b0)        
+//        .s_ext_irq_i    (1'b0)
     );
 
     mmu mmu_inst(
@@ -325,7 +328,7 @@ module soc #()(
         .req_ready_o    (core_req_ready),
 
         .state_o(state_o),
-        
+
         .resp_valid_o   (core_resp_valid),
         .resp_value_o   (core_resp_value),
         .resp_ex_valid_o(core_resp_ex_valid),
@@ -355,7 +358,7 @@ module soc #()(
         .req_addr_i     (trunc_address),
         .req_value_i    (mmu_req_value),
         .req_wstrb_i    (mmu_req_wstrb),
-        
+
         .req_ready_o    (uart_req_ready),
         .resp_valid_o   (uart_resp_valid),
         .resp_value_o   (uart_resp_value),
@@ -373,7 +376,7 @@ module soc #()(
         .req_addr_i     (trunc_address),
         .req_value_i    (mmu_req_value),
         .req_wstrb_i    (mmu_req_wstrb),
-        
+
         .req_ready_o    (clint_req_ready),
         .resp_valid_o   (clint_resp_valid),
         .resp_value_o   (clint_resp_value),
@@ -390,7 +393,7 @@ module soc #()(
         .req_addr_i     (trunc_address),
         .req_value_i    (mmu_req_value),
         .req_wstrb_i    (mmu_req_wstrb),
-        
+
         .req_ready_o    (plic_req_ready),
         .resp_valid_o   (plic_resp_valid),
         .resp_value_o   (plic_resp_value),
@@ -415,7 +418,7 @@ module soc #()(
         .req_addr_i     (trunc_address),
         .req_value_i    (mmu_req_value),
         .req_wstrb_i    (mmu_req_wstrb),
-        
+
         .req_ready_o    (cache_req_ready),
         .resp_valid_o   (cache_resp_valid),
         .resp_value_o   (cache_resp_value),
@@ -431,7 +434,7 @@ module soc #()(
         .m_axi_awprot   (m_axi_awprot),
         .m_axi_awvalid  (m_axi_awvalid),
         .m_axi_awready  (m_axi_awready),
-        
+
         .m_axi_wdata    (m_axi_wdata),
         .m_axi_wstrb    (m_axi_wstrb),
         .m_axi_wlast    (m_axi_wlast),
@@ -473,7 +476,7 @@ module soc #()(
         .req_addr_i     (trunc_address),
         .req_value_i    (mmu_req_value),
         .req_wstrb_i    (mmu_req_wstrb),
-        
+
         .req_ready_o    (xip_req_ready),
         .resp_valid_o   (xip_resp_valid),
         .resp_value_o   (xip_resp_value),
@@ -495,7 +498,7 @@ module soc #()(
         .req_addr_i     (trunc_address),
         .req_value_i    (mmu_req_value),
         .req_wstrb_i    (mmu_req_wstrb),
-        
+
         .req_ready_o    (spi_req_ready),
         .resp_valid_o   (spi_resp_valid),
         .resp_value_o   (spi_resp_value),

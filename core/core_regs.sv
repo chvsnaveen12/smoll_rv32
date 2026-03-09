@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Naveen Chavali
+
 module core_regs #()(
     input   logic   clk_i,
     input   logic   rst_ni,
@@ -19,7 +22,7 @@ module core_regs #()(
     end
 
     always_ff @(posedge clk_i) begin
-        if(waddr_i != 0)
+        if (waddr_i != 0)
             registers[waddr_i] <=  wdata_i;
     end
 

@@ -1,9 +1,12 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Naveen Chavali
+
 module core_shifter #()(
     input   logic [31:0]    inp_i,
     input   logic [4:0]     shamt_i,
     input   logic           left_shift_i,
     input   logic           shift_arith_i,
-    
+
     output  logic [31:0]    out_o
 );
     // Input to the shifter and output from the shifter
@@ -15,8 +18,8 @@ module core_shifter #()(
 
     // Flip the input if it's a left shift
     always_comb begin
-        if(left_shift_i)
-            for(int i = 0; i < 32; i++)
+        if (left_shift_i)
+            for (int i = 0; i < 32; i++)
                 shift_inp[31-i] = inp_i[i];
         else
             shift_inp = inp_i;
@@ -31,8 +34,8 @@ module core_shifter #()(
 
     // Flip the input if it's a left shift
     always_comb begin
-        if(left_shift_i)
-            for(int i = 0; i < 32; i++)
+        if (left_shift_i)
+            for (int i = 0; i < 32; i++)
                 shift_out[31-i] = shift4[i];
         else
             shift_out = shift4;
@@ -81,7 +84,7 @@ module core_alu import core_defs::*;#()(
     logic [4:0] shamt;
     logic lshift;
     logic eq_flag, lt_flag, ltu_flag, branch_pre_neg;
-    
+
     assign operand_a        = use_pc_i ? pc_i : rs1_i;
     assign operand_b        = use_imm_i ? immediate_i : rs2_i;
     assign shamt            = use_imm_i ? immediate_i[4:0] : rs2_i[4:0];
@@ -101,7 +104,7 @@ module core_alu import core_defs::*;#()(
     core_comparator comparator(
         .operand_a_i(rs1_i),
         .operand_b_i(rs2_i),
-        
+
         .eq_flag_o(eq_flag),
         .lt_flag_o(lt_flag),
         .ltu_flag_o(ltu_flag)
@@ -109,7 +112,7 @@ module core_alu import core_defs::*;#()(
 
     always_comb begin
         lshift = 0;
-        case(alu_op_e'(funct3_i))
+        case (alu_op_e'(funct3_i))
             ALU_ADD: begin
                 output_o = arith_sub_i & !use_imm_i ? diff : sum_o;
             end
@@ -133,7 +136,7 @@ module core_alu import core_defs::*;#()(
     end
 
     always_comb begin
-        case(cmp_op_e'({funct3_i[2:1], 1'b0}))
+        case (cmp_op_e'({funct3_i[2:1], 1'b0}))
             CMP_EQ:
                 branch_pre_neg = eq_flag;
             CMP_LT:
@@ -150,7 +153,7 @@ module core_alu import core_defs::*;#()(
     assign csr_inp = funct3_i[2] ? csr_uimm_i : rs1_i;
 
     always_comb begin
-        case(sys_op_e'({1'b0, funct3_i[1:0]}))
+        case (sys_op_e'({1'b0, funct3_i[1:0]}))
             SYS_CSRRW:
                 csr_wdata_o = rs1_i;
             SYS_CSRRS:

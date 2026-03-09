@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Naveen Chavali
+
 module spi (
     input  logic        clk_i,
     input  logic        rst_ni,
@@ -7,7 +10,7 @@ module spi (
     input  logic [31:0] req_addr_i,
     input  logic [31:0] req_value_i,
     input  logic [3:0]  req_wstrb_i,
-    
+
     output logic        req_ready_o,
     output logic        resp_valid_o,
     output logic [31:0] resp_value_o,
@@ -66,7 +69,7 @@ module spi (
                     sck_reg  <= 0;
                     tick_cnt <= 0;
                     bit_cnt  <= 0;
-                    
+
                     // Start transfer when bus interface requests it
                     if (start_transfer && !busy) begin
                         busy      <= 1;
@@ -78,7 +81,7 @@ module spi (
                 TRANSFER: begin
                     if (tick_cnt == clk_div) begin
                         tick_cnt <= 0;
-                        
+
                         if (sck_reg == 0) begin
                             // Rising Edge: Sample MISO
                             sck_reg <= 1;
@@ -86,7 +89,7 @@ module spi (
                         end else begin
                             // Falling Edge: Shift Data
                             sck_reg <= 0;
-                            
+
                             if (bit_cnt == 7) begin
                                 state   <= IDLE;
                                 busy    <= 0;
@@ -113,7 +116,7 @@ module spi (
         if (!rst_ni) begin
             resp_valid_o   <= 0;
             resp_value_o   <= 0;
-            
+
             cs_reg         <= 1;    // Default High
             clk_div        <= 100;  // Default Divider
             tx_shift       <= 0;

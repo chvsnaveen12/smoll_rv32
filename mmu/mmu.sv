@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Naveen Chavali
+
 `timescale 1ns/1ps
 module mmu #()(
     input logic clk_i,
@@ -124,22 +127,22 @@ module mmu #()(
     // Effective privilege (MPRV)
     always_comb begin
         actual_priv = muxed_priv;
-        if(muxed_priv == 2'b11 && muxed_mprv && ~muxed_is_fetch)
+        if (muxed_priv == 2'b11 && muxed_mprv && ~muxed_is_fetch)
             actual_priv = muxed_mpp;
     end
 
     // Permission fault check
     always_comb begin
         fault = 1'b0;
-        if(muxed_is_fetch && !muxed_tlb_d.exec)
+        if (muxed_is_fetch && !muxed_tlb_d.exec)
             fault = 1'b1;
-        if(~muxed_is_fetch && ~|muxed_wstrb && !muxed_tlb_d.read && (~muxed_mxr || ~muxed_tlb_d.exec))
+        if (~muxed_is_fetch && ~|muxed_wstrb && !muxed_tlb_d.read && (~muxed_mxr || ~muxed_tlb_d.exec))
             fault = 1'b1;
-        if(|muxed_wstrb && !muxed_tlb_d.write)
+        if (|muxed_wstrb && !muxed_tlb_d.write)
             fault = 1'b1;
-        if(actual_priv == 2'b10 && muxed_tlb_d.user && ~muxed_sum)
+        if (actual_priv == 2'b10 && muxed_tlb_d.user && ~muxed_sum)
             fault = 1'b1;
-        if(actual_priv == 2'b00 && ~muxed_tlb_d.user)
+        if (actual_priv == 2'b00 && ~muxed_tlb_d.user)
             fault = 1'b1;
     end
 
@@ -183,13 +186,13 @@ module mmu #()(
         req_value_o     = 32'b0;
         req_wstrb_o     = 4'b0;
         req_valid_o     = 1'b0;
-        case(state_q)
+        case (state_q)
             STATE_IDLE_REQ: begin
                 req_addr_o  = final_addr;
                 req_value_o = req_value_i;
                 req_wstrb_o = req_wstrb_i;
                 req_ready_o = req_ready_i;
-                if(tag_hit && (~should_translate || ~fault))
+                if (tag_hit && (~should_translate || ~fault))
                     req_valid_o = req_valid_i;
                 else
                     req_ready_o = 1'b1;
@@ -222,7 +225,7 @@ module mmu #()(
                 req_addr_o  = final_addr;
                 req_value_o = req_value_q;
                 req_wstrb_o = req_wstrb_q;
-                if(~fault)
+                if (~fault)
                     req_valid_o = 1'b1;
             end
         endcase
@@ -231,9 +234,9 @@ module mmu #()(
     // Next state logic
     always_comb begin
         next_state = STATE_FAULT_RESP;
-        case(state_q)
+        case (state_q)
             STATE_IDLE_REQ: begin
-                if(tag_hit)
+                if (tag_hit)
                     next_state = (should_translate && fault) ? STATE_FAULT_RESP : STATE_IDLE_RESP;
                 else
                     next_state = STATE_L1_FETCH;
@@ -243,7 +246,7 @@ module mmu #()(
             STATE_L1_FETCH:
                 next_state = STATE_L1_WAIT;
             STATE_L1_WAIT: begin
-                if(~resp_value_i[0])
+                if (~resp_value_i[0])
                     next_state = STATE_FAULT_RESP;
                 else
                     next_state = |resp_value_i[3:1] ? STATE_FINISH : STATE_L2_FETCH;
@@ -251,7 +254,7 @@ module mmu #()(
             STATE_L2_FETCH:
                 next_state = STATE_L2_WAIT;
             STATE_L2_WAIT: begin
-                if(~resp_value_i[0])
+                if (~resp_value_i[0])
                     next_state = STATE_FAULT_RESP;
                 else
                     next_state = STATE_FINISH;
@@ -267,22 +270,22 @@ module mmu #()(
 
     // Sequential logic
     always_ff @(posedge clk_i) begin
-        if(!rst_ni) begin
+        if (!rst_ni) begin
             state_q <= STATE_IDLE_REQ;
             itlb_q  <= '0;
             dtlb_q  <= '0;
         end
         else begin
-            if(fence_i) begin
+            if (fence_i) begin
                 itlb_q.valid <= 1'b0;
                 dtlb_q.valid <= 1'b0;
             end
 
-            case(state_q)
+            case (state_q)
                 STATE_IDLE_REQ: begin
-                    if(req_valid_i) begin
-                        if(tag_hit && (~should_translate || ~fault)) begin
-                            if(req_ready_i) state_q <= next_state;
+                    if (req_valid_i) begin
+                        if (tag_hit && (~should_translate || ~fault)) begin
+                            if (req_ready_i) state_q <= next_state;
                         end else begin
                             state_q <= next_state;
                         end
@@ -299,34 +302,34 @@ module mmu #()(
                     end
                 end
                 STATE_IDLE_RESP: begin
-                    if(resp_valid_i)
+                    if (resp_valid_i)
                         state_q <= next_state;
                 end
                 STATE_L1_FETCH: begin
-                    if(req_ready_i)
+                    if (req_ready_i)
                         state_q <= next_state;
                 end
                 STATE_L1_WAIT: begin
-                    if(resp_valid_i)
+                    if (resp_valid_i)
                         state_q <= next_state;
-                    if(muxed_is_fetch) itlb_q <= tlb_fill_d;
+                    if (muxed_is_fetch) itlb_q <= tlb_fill_d;
                     else               dtlb_q <= tlb_fill_d;
                 end
                 STATE_L2_FETCH: begin
-                    if(req_ready_i)
+                    if (req_ready_i)
                         state_q <= next_state;
                 end
                 STATE_L2_WAIT: begin
-                    if(resp_valid_i)
+                    if (resp_valid_i)
                         state_q <= next_state;
-                    if(muxed_is_fetch) itlb_q <= tlb_fill_d;
+                    if (muxed_is_fetch) itlb_q <= tlb_fill_d;
                     else               dtlb_q <= tlb_fill_d;
                 end
                 STATE_FAULT_RESP: begin
                     state_q <= next_state;
                 end
                 STATE_FINISH: begin
-                    if(fault || req_ready_i)
+                    if (fault || req_ready_i)
                         state_q <= next_state;
                 end
                 default: begin

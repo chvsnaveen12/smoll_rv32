@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Naveen Chavali
+
 module core_fsm import core_defs::*;#()(
     // Global signals
     input   logic       clk_i,
@@ -23,7 +26,7 @@ module core_fsm import core_defs::*;#()(
     input   logic [31:0]    resp_ex_code_i,
 
     output  logic           fence_o,
-    
+
     output  logic [31:0]    pc_o,
 
     // Pending interrupts
@@ -32,7 +35,7 @@ module core_fsm import core_defs::*;#()(
     input   logic           m_soft_irq_i,
     input   logic           s_ext_irq_i
 );
-    // FSM ===================================================== 
+    // FSM =====================================================
     typedef enum logic [3:0] {
         STATE_FETCH         = 4'b0000,
         STATE_FETCH_WAIT    = 4'b0001,
@@ -52,7 +55,7 @@ module core_fsm import core_defs::*;#()(
     assign pc_o = pc_q;
 
     // Registers used in between stages ========================
-    
+
     // Global variables
     logic           global_ex_valid;
     logic [31:0]    global_ex_code_q;
@@ -169,7 +172,7 @@ module core_fsm import core_defs::*;#()(
         .priv_op_o(decoder_priv_op),
         .funct3_o(decoder_funct3),
         .arith_sub_o(decoder_arith_sub),
-        
+
         .csr_addr_o(decoder_csr_addr),
         .csr_uimm_o(decoder_csr_uimm)
     );
@@ -203,7 +206,7 @@ module core_fsm import core_defs::*;#()(
         .exception_code_i(global_ex_code_q),
         .exception_tval_i(global_ex_tval_q),
         .instr_pc_i(pc_q),
-        
+
         .mret_i(csrs_mret),
         .sret_i(csrs_sret),
 
@@ -259,7 +262,7 @@ module core_fsm import core_defs::*;#()(
     logic [31:0]    lsu_req_addr;
     logic [31:0]    lsu_req_value;
     logic [3:0]     lsu_req_wstrb;
-    logic [31:0]    lsu_load_data; 
+    logic [31:0]    lsu_load_data;
 
     core_lsu lsu(
         .addr_i(ex_sum_q),
@@ -298,9 +301,9 @@ module core_fsm import core_defs::*;#()(
         end
         else
             state_q <= next_state;
-        case(state_q)
+        case (state_q)
             STATE_FETCH: begin
-                if(rst_ni) begin
+                if (rst_ni) begin
                     global_debug_cycle_q    <= global_debug_cycle_q + 1;
                 end else begin
                     global_debug_cycle_q    <= 0;
@@ -337,7 +340,7 @@ module core_fsm import core_defs::*;#()(
 
                 global_ex_code_q    <= 32'h2;                 // Illegal instruction
                 global_ex_tval_q    <= fe_instr_q;
-                
+
                 // $display("DEC: PC=%h, RS1=%d Val=%h, RS2=%d Val=%h", fe_pc_q, decoder_rs1_sel, regs_rs1, decoder_rs2_sel, regs_rs2);
             end
             STATE_EXECUTE: begin
@@ -369,9 +372,9 @@ module core_fsm import core_defs::*;#()(
                 pc_q <= npc;
             end
             STATE_SYSTEM: begin
-                case(sys_op_e'(ex_funct3_q))
+                case (sys_op_e'(ex_funct3_q))
                     SYS_PRIV: begin
-                        case(ex_priv_op_e)
+                        case (ex_priv_op_e)
                             PRIVOP_EBREAK: begin
                                 global_ex_code_q    <= 32'h3;
                                 global_ex_tval_q    <= fe_instr_q;
@@ -387,7 +390,7 @@ module core_fsm import core_defs::*;#()(
                         endcase
                     end
                     SYS_CSRRW, SYS_CSRRWI, SYS_CSRRS, SYS_CSRRSI, SYS_CSRRC, SYS_CSRRCI: begin
-                        if(ex_csr_rvalid_q)
+                        if (ex_csr_rvalid_q)
                             pc_q <= npc;
                         global_ex_code_q    <= 32'h2;                 // Illegal instruction
                         global_ex_tval_q    <= fe_instr_q;
@@ -397,7 +400,7 @@ module core_fsm import core_defs::*;#()(
                 endcase
             end
             STATE_TRAP: begin
-                pc_q <= csrs_updated_pc; 
+                pc_q <= csrs_updated_pc;
             end
             STATE_FENCE: begin
                 pc_q <= npc;
@@ -412,8 +415,8 @@ module core_fsm import core_defs::*;#()(
     // // System ops
     // always_comb begin
     //     csrs_waddr = 0;
-    //     if(state_q == STATE_SYSTEM) begin
-    //         case(sys_op_e'(ex_funct3_q))
+    //     if (state_q == STATE_SYSTEM) begin
+    //         case (sys_op_e'(ex_funct3_q))
     //             SYS_CSRRW, SYS_CSRRS, SYS_CSRRC, SYS_CSRRWI, SYS_CSRRSI, SYS_CSRRCI: begin
     //                 csrs_waddr = ex_csr_wen_q ? ex_csr_addr_q : 12'b0;
     //             end
@@ -431,8 +434,8 @@ module core_fsm import core_defs::*;#()(
         csrs_waddr = 0;
         csrs_wdata = 0;
 
-        if(state_q == STATE_WRITEBACK) begin
-            case(ex_op_type_q)
+        if (state_q == STATE_WRITEBACK) begin
+            case (ex_op_type_q)
                 OP_ALU: begin
                     regs_waddr = ex_rd_sel_q;
                     regs_wdata = ex_output_q;
@@ -453,24 +456,24 @@ module core_fsm import core_defs::*;#()(
                 end
             endcase
         end
-        else if(state_q == STATE_SYSTEM && (sys_op_e'(ex_funct3_q[1:0]) != SYS_PRIV) && ex_csr_rvalid_q) begin
+        else if (state_q == STATE_SYSTEM && (sys_op_e'(ex_funct3_q[1:0]) != SYS_PRIV) && ex_csr_rvalid_q) begin
             regs_waddr = ex_rd_sel_q;
             regs_wdata = ex_csr_rdata_q;
 
-            if(sys_op_e'(ex_funct3_q[1:0]) == SYS_CSRRW ||  sys_op_e'(ex_funct3_q[1:0]) == SYS_CSRRWI || ex_csr_wen_q) begin
+            if (sys_op_e'(ex_funct3_q[1:0]) == SYS_CSRRW ||  sys_op_e'(ex_funct3_q[1:0]) == SYS_CSRRWI || ex_csr_wen_q) begin
                 csrs_waddr = ex_csr_addr_q;
             end
             csrs_wdata = ex_csr_wdata_q;
         end
-        
-        // if(state_q == STATE_WRITEBACK && regs_waddr != 0)
+
+        // if (state_q == STATE_WRITEBACK && regs_waddr != 0)
         //     // $display("WB_FINAL: PC=%h, RD=%d, Data=%h", pc_q, regs_waddr, regs_wdata);
     end
 
     // NPC logic
     always_comb begin
         npc = 0;
-        case(ex_op_type_q)
+        case (ex_op_type_q)
             OP_ALU, OP_LOAD, OP_STORE, OP_LUI_AUIPC, OP_FENCE, OP_SYSTEM:
                 npc = ex_npc_q;
             OP_JUMP:
@@ -491,15 +494,15 @@ module core_fsm import core_defs::*;#()(
         global_ex_valid = 0;
         next_state = STATE_SYSTEM;
         fence_o = 0;
-        case(state_q)
+        case (state_q)
             STATE_FETCH: begin
                 global_ex_valid = |pc_q[1:0];
                 next_state = req_ready_i ? STATE_FETCH_WAIT : STATE_FETCH;
             end
             STATE_FETCH_WAIT: begin
-                if(resp_valid_i)
+                if (resp_valid_i)
                     global_ex_valid = resp_ex_valid_i;
- 
+
                 next_state = resp_valid_i ? STATE_DECODE : STATE_FETCH_WAIT;
             end
             STATE_DECODE: begin
@@ -507,7 +510,7 @@ module core_fsm import core_defs::*;#()(
                 next_state = STATE_EXECUTE;
             end
             STATE_EXECUTE: begin
-                case(de_op_type_q)
+                case (de_op_type_q)
                     OP_LOAD, OP_STORE:
                         next_state = STATE_MEM;
                     OP_SYSTEM:
@@ -524,7 +527,7 @@ module core_fsm import core_defs::*;#()(
             end
 
             STATE_MEM_WAIT: begin
-                if(resp_valid_i)
+                if (resp_valid_i)
                     global_ex_valid = resp_ex_valid_i;
                 next_state = resp_valid_i ? STATE_WRITEBACK : STATE_MEM_WAIT;
             end
@@ -534,9 +537,9 @@ module core_fsm import core_defs::*;#()(
             end
             STATE_SYSTEM: begin
                 next_state = STATE_FETCH;
-                case(sys_op_e'(ex_funct3_q))
+                case (sys_op_e'(ex_funct3_q))
                     SYS_PRIV: begin
-                        case(ex_priv_op_e)
+                        case (ex_priv_op_e)
                             PRIVOP_EBREAK, PRIVOP_ECALL:
                                 global_ex_valid = 1'b1;
                             PRIVOP_MRET:
@@ -566,7 +569,7 @@ module core_fsm import core_defs::*;#()(
             default : $error("bad case");
         endcase
 
-        if(global_ex_valid)
+        if (global_ex_valid)
             next_state = STATE_TRAP;
     end
 
@@ -585,7 +588,7 @@ module core_fsm import core_defs::*;#()(
         // req_mprv_o      = csrs_mprv;
         req_priv_o      = csrs_priv;
 
-        case(state_q)
+        case (state_q)
             STATE_FETCH: begin
                 req_valid_o     = !rst_ni ? 0 : 1;
                 req_addr_o      = pc_q;
