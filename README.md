@@ -1,10 +1,13 @@
+
+
+
 # smoll_rv32
 
 RV32IMA RISC-V core. Boots Linux with BusyBox rootfs on a Nexys A7 100T FPGA.
 
 ## Demo
 
-<video src="demo.mp4" controls width="640"></video>
+https://github.com/user-attachments/assets/6b0b7ba1-799d-4ecd-94d8-f3755a3631c7
 
 Linux booting on the core on Nexys A7 100T.
 
